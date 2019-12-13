@@ -15,23 +15,24 @@ library(dplyr)
 
 The main library we care about is from corpora and called "BrownBigrams." It is a data frame  with 24167 rows and the following columns:
 
-id: unique ID of the bigram entry
+  id: unique ID of the bigram entry
 
-word1: the first word form in the bigram (character)
+  word1: the first word form in the bigram (character)
 
-pos1: part-of-speech category of the first word (factor)
+  pos1: part-of-speech category of the first word (factor)
 
-word2: the second word form in the bigram (character)
+  word2: the second word form in the bigram (character)
 
-pos2: part-of-speech category of the second word (factor)
+  pos2: part-of-speech category of the second word (factor)
 
-O11: co-occurrence frequency of the bigram (numeric)
+  O11: co-occurrence frequency of the bigram (numeric)
 
-O12: occurrences of the first word without the second (numeric)
+  O12: occurrences of the first word without the second (numeric)
 
-O21: occurrences of the second word without the first (numeric)
+  O21: occurrences of the second word without the first (numeric)
 
-O22: number of bigram tokens containing neither the first nor the second word (numeric)
+  O22: number of bigram tokens containing neither the first nor the second word (numeric)
+  
 
 It looks like this:
 ```{r}
@@ -49,10 +50,11 @@ Our Symbols are the words. We construct the list of symbols like this:
 
 ```{r}
 symbols = unique(BrownBigrams$word1)
+head(symbols, 5)
 ```
 
 
-Next, we make our transition matrix. This is done by finding the counts of all the bigrams of parts of speech and dividing by the occurance of the first one.
+Next, we make our transition matrix. We start this by counting all of the different length-2 tag sequences that occur throughout our dataset. The following matrix has these counts where entry $X_{i,j}$  
 
 ```{r}
 transition_matrix = matrix(0L, nrow = length(states), ncol = length(states), dimnames = list(states, states))
@@ -63,7 +65,7 @@ for(i in 1:24167){
 transition_matrix
 ```
 
-Now that we have our counts, we perform opperations to get probabilities.
+Now that we have our counts, we divide each number in row i by the total count of dimension i. 
 
 ```{r}
 tag_count = BrownBigrams %>% group_by(pos1) %>% tally()
@@ -73,10 +75,10 @@ for(i in 1:18){
   transition_matrix[states[i],states[j]] = transition_matrix[states[i],states[j]] / tag_count$n[i]
   }
 }
-transition_matrix
+head(transition_matrix, 5)
 ```
 
-Finally, we make our emmission probabilities
+Finally, we make our emmission probabilities using the same process that we did for our transimissions.
 
 ```{r}
 emissions = matrix(0L, nrow = length(states), ncol = length(symbols), dimnames = list(states, symbols))
@@ -91,10 +93,11 @@ for(a in 1:length(states)){
   emissions[states[a],symbols[b]] = emissions[states[a],symbols[b]] / symbol_count$n[b]
   }
 }
-```
-(We will not print out this matrix because it is far too long).
 
-Now, we can make our HMM and run the viterbi algorithm
+```
+(We will not print out this matrix because even the first row is far too long).
+
+Now, we can make our HMM and run the viterbi algorithm with some simple r commands!
 
 ```{r}
 model = initHMM(States=states, Symbols=symbols, startProbs=NULL, transProbs=transition_matrix, emissionProbs=emissions)
